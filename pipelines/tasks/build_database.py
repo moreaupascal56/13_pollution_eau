@@ -39,23 +39,24 @@ def get_yearly_dataset_infos(year:str) -> Dict[str,str]:
     return dis_files_info_by_year[year]
 
 
-def process_sise_eaux_dataset_2024():
+def process_sise_eaux_dataset_2024(year:str):
     """Process SISE-Eaux dataset for 2024."""
 
+    yearly_dataset_info = get_yearly_dataset_infos(year = year)
     # Dataset specific constants
     DATA_URL = (
-        "https://www.data.gouv.fr/fr/datasets/r/84a67a3b-08a7-4001-98e6-231c74a98139"
+        f"https://www.data.gouv.fr/fr/datasets/r/{yearly_dataset_info["id"]}"
     )
-    ZIP_FILE = os.path.join(CACHE_FOLDER, "dis-2024.zip")
-    EXTRACT_FOLDER = os.path.join(CACHE_FOLDER, "raw_data_2024")
+    ZIP_FILE = os.path.join(CACHE_FOLDER, yearly_dataset_info["name"])
+    EXTRACT_FOLDER = os.path.join(CACHE_FOLDER, f"raw_data_{year}")
 
     FILES = {
-        "communes": {"filename": "DIS_COM_UDI_2024.txt", "table": "sise_communes"},
-        "prelevements": {"filename": "DIS_PLV_2024.txt", "table": "sise_prelevements"},
-        "resultats": {"filename": "DIS_RESULT_2024.txt", "table": "sise_resultats"},
+        "communes": {"filename": f"DIS_COM_UDI_{year}.txt", "table": f"sise_communes_{year}"},
+        "prelevements": {"filename": f"DIS_PLV_{year}.txt", "table": f"sise_prelevements_{year}"},
+        "resultats": {"filename": f"DIS_RESULT_{year}.txt", "table": f"sise_resultats_{year}"},
     }
 
-    logger.info("Downloading and extracting SISE-Eaux dataset for 2024...")
+    logger.info(f"Downloading and extracting SISE-Eaux dataset for {year}...")
     response = requests.get(DATA_URL, stream=True)
     with open(ZIP_FILE, "wb") as f:
         for chunk in response.iter_content(chunk_size=8192):
@@ -83,4 +84,4 @@ def process_sise_eaux_dataset_2024():
 
 
 def execute():
-    process_sise_eaux_dataset_2024()
+    process_sise_eaux_dataset_2024(year="2024")
