@@ -83,5 +83,15 @@ def process_sise_eaux_dataset_2024(year:str):
     return True
 
 
+def check_table_existence(conn, table_name):
+    query = f"""
+        SELECT COUNT(*)
+        FROM information_schema.tables
+        WHERE table_name = '{table_name}'
+        """
+    conn.execute(query)
+    return list(conn.fetchone())[0] == 1
+
+
 def execute():
     process_sise_eaux_dataset_2024(year="2024")
