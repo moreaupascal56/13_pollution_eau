@@ -39,21 +39,37 @@ def get_yearly_dataset_infos(year:str) -> Dict[str,str]:
     return dis_files_info_by_year[year]
 
 
-def process_sise_eaux_dataset_2024(year:str):
-    """Process SISE-Eaux dataset for 2024."""
+def process_sise_eaux_dataset_2024(year: str):
+    """
+    Downloads from www.data.gouv.fr the SISE-Eaux dataset for one year
+    :param year: The year from which we want to download the dataset
+    :return: Create or replace the associated tables in the duckcb database.
+        It adds the column "annee_prelevement" based on year as an integer.
+    """
 
-    yearly_dataset_info = get_yearly_dataset_infos(year = year)
+    yearly_dataset_info = get_yearly_dataset_infos(year=year)
+
     # Dataset specific constants
-    DATA_URL = (
-        f"https://www.data.gouv.fr/fr/datasets/r/{yearly_dataset_info["id"]}"
-    )
+    DATA_URL = f"https://www.data.gouv.fr/fr/datasets/r/{yearly_dataset_info['id']}"
     ZIP_FILE = os.path.join(CACHE_FOLDER, yearly_dataset_info["name"])
     EXTRACT_FOLDER = os.path.join(CACHE_FOLDER, f"raw_data_{year}")
 
     FILES = {
-        "communes": {"filename": f"DIS_COM_UDI_{year}.txt", "table": f"sise_communes_{year}"},
-        "prelevements": {"filename": f"DIS_PLV_{year}.txt", "table": f"sise_prelevements_{year}"},
-        "resultats": {"filename": f"DIS_RESULT_{year}.txt", "table": f"sise_resultats_{year}"},
+        "communes": {
+            "filename_prefix": f"DIS_COM_UDI_",
+            "file_extension": ".txt",
+            "table_name": f"sise_communes",
+        },
+        "prelevements": {
+            "filename_prefix": f"DIS_PLV_",
+            "file_extension": ".txt",
+            "table_name": f"sise_prelevements",
+        },
+        "resultats": {
+            "filename_prefix": f"DIS_RESULT_",
+            "file_extension": ".txt",
+            "table_name": f"sise_resultats",
+        },
     }
 
     logger.info(f"Downloading and extracting SISE-Eaux dataset for {year}...")
@@ -68,13 +84,34 @@ def process_sise_eaux_dataset_2024(year:str):
 
     logger.info("Creating tables in the database...")
     conn = duckdb.connect(DUCKDB_FILE)
+
     for file_info in FILES.values():
-        filepath = os.path.join(EXTRACT_FOLDER, file_info["filename"])
-        query = f"""
-            CREATE OR REPLACE TABLE {file_info["table"]} AS 
-            SELECT * FROM read_csv('{filepath}', header=true, delim=',');
+        filepath = os.path.join(
+            EXTRACT_FOLDER,
+            f"{file_info['filename_prefix']}{year}{file_info['file_extension']}",
+        )
+
+        if check_table_existence(conn=conn, table_name=f"{file_info['table_name']}"):
+            query = f"""
+                DELETE FROM {f"{file_info['table_name']}"}
+                WHERE annee_prelevement = {year}
+                ;
+            """
+            conn.execute(query)
+            query_start = f"INSERT INTO {f'{file_info["table_name"]}'} "
+
+        else:
+            query_start = f"CREATE TABLE {f'{file_info["table_name"]}'} AS "
+
+        query_select = f"""
+            SELECT 
+                *,
+                CAST({year} as INTEGER) AS annee_prelevement
+            FROM read_csv('{filepath}', header=true, delim=',');
         """
-        conn.execute(query)
+
+        conn.execute(query_start + query_select)
+
     conn.close()
 
     logger.info("Cleaning up...")
