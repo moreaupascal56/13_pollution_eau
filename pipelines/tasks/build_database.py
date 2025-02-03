@@ -174,6 +174,10 @@ def process_edc_datasets(
             raise ValueError(
                 """ custom_years parameter needs to be specified if refresh_type="custom" """
             )
+    else:
+        raise ValueError(
+            f""" refresh_type needs to be one of ["all", "last", "custom"], it can't be: {refresh_type}"""
+        )
 
     logger.info(
         f"Launching processing of EDC datasets for years: {years_to_update}"
