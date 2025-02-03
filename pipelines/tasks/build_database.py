@@ -31,9 +31,9 @@ def check_table_existence(conn: duckdb.DuckDBPyConnection, table_name: str) -> b
     return list(conn.fetchone())[0] == 1
 
 
-def get_yearly_dataset_infos(year: str) -> Dict[str, str]:
+def get_yearly_edc_infos(year: str) -> Dict[str, str]:
     """
-    Returns information for yearly dataset extract of the SISE Eaux datasets.
+    Returns information for yearly dataset extract of the EDC (Eau distribuée par commune) datasets.
     The data comes from https://www.data.gouv.fr/fr/datasets/resultats-du-controle-sanitaire-de-leau-distribuee-commune-par-commune/
     For each year a dataset is downloadable on a URL like this (ex. 2024):
         https://www.data.gouv.fr/fr/datasets/r/84a67a3b-08a7-4001-98e6-231c74a98139
@@ -42,7 +42,7 @@ def get_yearly_dataset_infos(year: str) -> Dict[str, str]:
     :param year: The year from which we want to get the dataset information.
     :return: A dict with the id and name of the dataset.
     """
-    dis_files_info_by_year = {
+    edc_dis_files_info_by_year = {
         "2024": {"id": "84a67a3b-08a7-4001-98e6-231c74a98139", "name": "dis-2024.zip"},
         "2023": {"id": "c89dec4a-d985-447c-a102-75ba814c398e", "name": "dis-2023.zip"},
         "2022": {"id": "a97b6074-c4dd-4ef2-8922-b0cf04dbff9a", "name": "dis-2022.zip"},
@@ -53,18 +53,19 @@ def get_yearly_dataset_infos(year: str) -> Dict[str, str]:
         "2017": {"id": "5785427b-3167-49fa-a581-aef835f0fb04", "name": "dis-2017.zip"},
         "2016": {"id": "483c84dd-7912-483b-b96f-4fa5e1d8651f", "name": "dis-2016.zip"},
     }
-    return dis_files_info_by_year[year]
+    return edc_dis_files_info_by_year[year]
 
 
-def download_extract_insert_yearly_SISE_data(year: str):
+def download_extract_insert_yearly_edc_data(year: str):
     """
-    Downloads from www.data.gouv.fr the SISE-Eaux dataset for one year, extract the files and insert into duckdb
+    Downloads from www.data.gouv.fr the EDC (Eau distribuée par commune) dataset for one year,
+    extracts the files and insert the data into duckdb
     :param year: The year from which we want to download the dataset
     :return: Create or replace the associated tables in the duckcb database.
         It adds the column "annee_prelevement" based on year as an integer.
     """
 
-    yearly_dataset_info = get_yearly_dataset_infos(year=year)
+    yearly_dataset_info = get_yearly_edc_infos(year=year)
 
     # Dataset specific constants
     DATA_URL = f"https://www.data.gouv.fr/fr/datasets/r/{yearly_dataset_info['id']}"
@@ -75,21 +76,21 @@ def download_extract_insert_yearly_SISE_data(year: str):
         "communes": {
             "filename_prefix": f"DIS_COM_UDI_",
             "file_extension": ".txt",
-            "table_name": f"sise_communes",
+            "table_name": f"edc_communes",
         },
         "prelevements": {
             "filename_prefix": f"DIS_PLV_",
             "file_extension": ".txt",
-            "table_name": f"sise_prelevements",
+            "table_name": f"edc_prelevements",
         },
         "resultats": {
             "filename_prefix": f"DIS_RESULT_",
             "file_extension": ".txt",
-            "table_name": f"sise_resultats",
+            "table_name": f"edc_resultats",
         },
     }
 
-    logger.info(f"Processing SISE-Eaux dataset for {year}...")
+    logger.info(f"Processing EDC dataset for {year}...")
     response = requests.get(DATA_URL, stream=True)
     with open(ZIP_FILE, "wb") as f:
         for chunk in response.iter_content(chunk_size=8192):
@@ -137,12 +138,12 @@ def download_extract_insert_yearly_SISE_data(year: str):
     return True
 
 
-def process_sise_eaux_dataset(
+def process_edc_datasets(
     refresh_type: Literal["all", "last", "custom"] = "all",
     custom_years: List[str] = None,
 ):
     """
-    Process the SISE eaux dataset.
+    Process the EDC datasets.
     :param refresh_type: Refresh type to run
         - "all": Refresh the data for every possible year
         - "last": Refresh the data only for the last available year
@@ -175,11 +176,11 @@ def process_sise_eaux_dataset(
             )
 
     logger.info(
-        f"Launching processing of SISE-Eaux dataset for years: {years_to_update}"
+        f"Launching processing of EDC datasets for years: {years_to_update}"
     )
 
     for year in years_to_update:
-        download_extract_insert_yearly_SISE_data(year=year)
+        download_extract_insert_yearly_edc_data(year=year)
 
     logger.info("Cleaning up cache...")
     clear_cache(recreate_folder=False)
@@ -187,4 +188,6 @@ def process_sise_eaux_dataset(
 
 
 def execute():
-    process_sise_eaux_dataset()
+    process_edc_datasets()
+
+    conn = duckdb.connect(DUCKDB_FILE)
