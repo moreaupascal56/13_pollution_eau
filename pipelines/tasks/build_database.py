@@ -165,7 +165,7 @@ def process_sise_eaux_dataset(
     if refresh_type == "all":
         years_to_update = available_years
     elif refresh_type == "last":
-        years_to_update = available_years[-1]
+        years_to_update = available_years[-1:]
     elif refresh_type == "custom":
         if custom_years:
             years_to_update = list(set(custom_years).intersection(available_years))
