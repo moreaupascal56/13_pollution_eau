@@ -15,6 +15,22 @@ from ._common import CACHE_FOLDER, DUCKDB_FILE, clear_cache
 logger = logging.getLogger(__name__)
 
 
+def check_table_existence(conn: duckdb.DuckDBPyConnection, table_name: str) -> bool:
+    """
+    Check if a table exists in the duckdb database
+    :param conn: The duckdb connection to use
+    :param table_name: The table name to check existence
+    :return: True if the table exists, False if not
+    """
+    query = f"""
+        SELECT COUNT(*)
+        FROM information_schema.tables
+        WHERE table_name = '{table_name}'
+        """
+    conn.execute(query)
+    return list(conn.fetchone())[0] == 1
+
+
 def get_yearly_dataset_infos(year: str) -> Dict[str, str]:
     """
     Returns information for yearly dataset extract of the SISE Eaux datasets.
@@ -119,22 +135,6 @@ def download_extract_insert_yearly_SISE_data(year: str):
     clear_cache()
 
     return True
-
-
-def check_table_existence(conn: duckdb.DuckDBPyConnection, table_name: str) -> bool:
-    """
-    Check if a table exists in the duckdb database
-    :param conn: The duckdb connection to use
-    :param table_name: The table name to check existence
-    :return: True if the table exists, False if not
-    """
-    query = f"""
-        SELECT COUNT(*)
-        FROM information_schema.tables
-        WHERE table_name = '{table_name}'
-        """
-    conn.execute(query)
-    return list(conn.fetchone())[0] == 1
 
 
 def process_sise_eaux_dataset(
