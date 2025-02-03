@@ -62,7 +62,7 @@ def download_extract_insert_yearly_edc_data(year: str):
     extracts the files and insert the data into duckdb
     :param year: The year from which we want to download the dataset
     :return: Create or replace the associated tables in the duckcb database.
-        It adds the column "annee_prelevement" based on year as an integer.
+        It adds the column "de_partition" based on year as an integer.
     """
 
     yearly_dataset_info = get_yearly_edc_infos(year=year)
@@ -112,7 +112,7 @@ def download_extract_insert_yearly_edc_data(year: str):
         if check_table_existence(conn=conn, table_name=f"{file_info['table_name']}"):
             query = f"""
                 DELETE FROM {f"{file_info['table_name']}"}
-                WHERE annee_prelevement = CAST({year} as INTEGER)
+                WHERE de_partition = CAST({year} as INTEGER)
                 ;
             """
             conn.execute(query)
@@ -124,7 +124,7 @@ def download_extract_insert_yearly_edc_data(year: str):
         query_select = f"""
             SELECT 
                 *,
-                CAST({year} as INTEGER) AS annee_prelevement
+                CAST({year} as INTEGER) AS de_partition
             FROM read_csv('{filepath}', header=true, delim=',');
         """
 
