@@ -191,5 +191,3 @@ def process_edc_datasets(
 
 def execute():
     process_edc_datasets()
-
-    conn = duckdb.connect(DUCKDB_FILE)
