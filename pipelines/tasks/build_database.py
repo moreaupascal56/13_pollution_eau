@@ -39,9 +39,9 @@ def get_yearly_dataset_infos(year:str) -> Dict[str,str]:
     return dis_files_info_by_year[year]
 
 
-def process_sise_eaux_dataset_2024(year: str):
+def download_extract_insert_yearly_SISE_data(year: str):
     """
-    Downloads from www.data.gouv.fr the SISE-Eaux dataset for one year
+    Downloads from www.data.gouv.fr the SISE-Eaux dataset for one year, extract the files and insert into duckdb
     :param year: The year from which we want to download the dataset
     :return: Create or replace the associated tables in the duckcb database.
         It adds the column "annee_prelevement" based on year as an integer.
@@ -94,7 +94,7 @@ def process_sise_eaux_dataset_2024(year: str):
         if check_table_existence(conn=conn, table_name=f"{file_info['table_name']}"):
             query = f"""
                 DELETE FROM {f"{file_info['table_name']}"}
-                WHERE annee_prelevement = {year}
+                WHERE annee_prelevement = CAST({year} as INTEGER)
                 ;
             """
             conn.execute(query)
@@ -128,6 +128,49 @@ def check_table_existence(conn, table_name):
         """
     conn.execute(query)
     return list(conn.fetchone())[0] == 1
+
+
+def process_sise_eaux_dataset(
+    refresh_type: Literal["all", "last", "custom"] = "all",
+    custom_years: List[str] = None,
+):
+    """
+    Process the SISE eaux dataset.
+    :param refresh_type: Refresh type to run
+        - "all": Refresh the data for every possible year
+        - "last": Refresh the data only for the last available year
+        - "custom": Refresh the data for the years specified in the list custom_years
+    :param custom_years: years to update
+    :return:
+    """
+    available_years = [
+        "2016",
+        "2017",
+        "2018",
+        "2019",
+        "2020",
+        "2021",
+        "2022",
+        "2023",
+        "2024",
+    ]
+
+    if refresh_type == "all":
+        years_to_update = available_years
+    elif refresh_type == "last":
+        years_to_update = available_years[-1]
+    elif refresh_type == "custom":
+        if custom_years:
+            years_to_update = list(set(custom_years).intersection(available_years))
+        else:
+            raise ValueError(
+                """ custom_years parameter needs to be specified if refresh_type="custom" """
+            )
+
+    for year in years_to_update:
+        download_extract_insert_yearly_SISE_data(year=year)
+
+    return True
 
 
 def execute():
