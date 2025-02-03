@@ -179,9 +179,7 @@ def process_edc_datasets(
             f""" refresh_type needs to be one of ["all", "last", "custom"], it can't be: {refresh_type}"""
         )
 
-    logger.info(
-        f"Launching processing of EDC datasets for years: {years_to_update}"
-    )
+    logger.info(f"Launching processing of EDC datasets for years: {years_to_update}")
 
     for year in years_to_update:
         download_extract_insert_yearly_edc_data(year=year)
