@@ -73,17 +73,17 @@ def download_extract_insert_yearly_SISE_data(year: str):
         },
     }
 
-    logger.info(f"Downloading and extracting SISE-Eaux dataset for {year}...")
+    logger.info(f"Processing SISE-Eaux dataset for {year}...")
     response = requests.get(DATA_URL, stream=True)
     with open(ZIP_FILE, "wb") as f:
         for chunk in response.iter_content(chunk_size=8192):
             f.write(chunk)
 
-    logger.info("Extracting files...")
+    logger.info("   Extracting files...")
     with ZipFile(ZIP_FILE, "r") as zip_ref:
         zip_ref.extractall(EXTRACT_FOLDER)
 
-    logger.info("Creating tables in the database...")
+    logger.info("   Creating or updating tables in the database...")
     conn = duckdb.connect(DUCKDB_FILE)
 
     for file_info in FILES.values():
@@ -115,7 +115,7 @@ def download_extract_insert_yearly_SISE_data(year: str):
 
     conn.close()
 
-    logger.info("Cleaning up...")
+    logger.info("   Cleaning up cache...")
     clear_cache()
 
     return True
@@ -174,9 +174,15 @@ def process_sise_eaux_dataset(
                 """ custom_years parameter needs to be specified if refresh_type="custom" """
             )
 
+    logger.info(
+        f"Launching processing of SISE-Eaux dataset for years: {years_to_update}"
+    )
+
     for year in years_to_update:
         download_extract_insert_yearly_SISE_data(year=year)
 
+    logger.info("Cleaning up cache...")
+    clear_cache(recreate_folder=False)
     return True
 
 
