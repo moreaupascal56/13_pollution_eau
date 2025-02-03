@@ -11,7 +11,7 @@ os.makedirs(CACHE_FOLDER, exist_ok=True)
 os.makedirs(DATABASE_FOLDER, exist_ok=True)
 
 
-def clear_cache(recreate_folder:bool=True):
+def clear_cache(recreate_folder: bool = True):
     """Clear the cache folder."""
     shutil.rmtree(CACHE_FOLDER)
     if recreate_folder:
