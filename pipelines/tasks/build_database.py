@@ -91,7 +91,8 @@ def download_extract_insert_yearly_edc_data(year: str):
         query_select = f"""
             SELECT 
                 *,
-                CAST({year} as INTEGER) AS de_partition
+                CAST({year} AS INTEGER) AS de_partition,
+                current_date            AS de_ingestion_date
             FROM read_csv('{filepath}', header=true, delim=',');
         """
 
