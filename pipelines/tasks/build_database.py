@@ -107,7 +107,7 @@ def download_extract_insert_yearly_edc_data(year: str):
 
 
 def process_edc_datasets(
-    refresh_type: Literal["all", "last", "custom"] = "all",
+    refresh_type: Literal["all", "last", "custom"] = "last",
     custom_years: List[str] = None,
 ):
     """
