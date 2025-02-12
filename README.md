@@ -139,7 +139,7 @@ uv run pipelines/run.py run download_database_https --env prod
 ```
 
 #### via S3 (Scaleway)
-Il faut bien configurer ses credentials Scaleway et son env [via le fichier .env.](#connection-a-scaleway-via-boto3-pour-stockage-cloud)
+Il faut bien configurer ses credentials Scaleway et son env via le fichier .env.
 
 
 ```bash
