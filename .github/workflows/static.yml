@@ -47,13 +47,10 @@ jobs:
 
       - name: Download production database from Storage
         run: |
-          uv run pipelines/run.py run download_database
+          uv run pipelines/run.py run download_database_https --env dev
 
-      - name: dbt deps
-        run: uv run dbt deps --project-dir dbt_/
-
-      - name: dbt docs generate
-        run: cd dbt_ && uv run dbt docs generate
+      - name: dbt deps & dbt docs generate
+        run: cd dbt_/ && uv run dbt deps && uv run dbt docs generate
 
 
   
@@ -62,6 +59,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    needs: run_dbt
     steps:
       - name: Checkout
         uses: actions/checkout@v4
